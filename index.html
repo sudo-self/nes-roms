@@ -3,112 +3,474 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NES Emulator</title>
-    <script src="https://unpkg.com/jsnes@0.8.0/dist/jsnes.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-base64/3.7.5/base64.min.js"></script>
+    <title>Ultimate Retro Game Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f3f3f3;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+        .game-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        #rom-games-content {
-            text-align: center;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+        }
+        .game-frame {
+            aspect-ratio: 16/9;
+            background-color: #1a1a1a;
+        }
+        .active-game {
+            border: 3px solid #3b82f6;
+        }
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        .nav-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .loader {
+            border-top-color: #3b82f6;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .tab-button {
+            transition: all 0.2s ease;
+        }
+        .tab-button.active {
+            background-color: #3b82f6;
+            color: white;
         }
         #emulator-container {
             display: none;
-            margin-top: 20px;
         }
-        #emulator-loading {
-            margin-top: 20px;
-            display: block;
+        #emulator {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex flex-col items-center mb-12">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-gamepad text-4xl text-blue-500 mr-3"></i>
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                    Ultimate Retro Game Hub
+                </h1>
+            </div>
+            <p class="text-gray-400 text-center max-w-2xl">
+                Play classic games right in your browser - both web-based games and ROMs from your collection!
+            </p>
+        </header>
 
-<div id="rom-games-content">
-    <h1>NES Emulator</h1>
-    <p>Upload a .nes or .zip file containing a .nes ROM:</p>
-    <input type="file" id="rom-upload" accept=".zip,.nes" class="text-black bg-white p-2 rounded" />
-    <div id="emulator-container">
-        <canvas id="nes-canvas"></canvas>
+        <!-- Tab Navigation -->
+        <div class="flex mb-8 bg-gray-800 rounded-lg p-1">
+            <button 
+                id="web-games-tab" 
+                class="tab-button flex-1 py-2 px-4 rounded-lg font-medium active"
+                onclick="showTab('web-games')"
+            >
+                <i class="fas fa-globe mr-2"></i> Web Games
+            </button>
+            <button 
+                id="rom-games-tab" 
+                class="tab-button flex-1 py-2 px-4 rounded-lg font-medium"
+                onclick="showTab('rom-games')"
+            >
+                <i class="fas fa-archive mr-2"></i> ROM Collection
+            </button>
+        </div>
+
+        <!-- Web Games Content -->
+        <div id="web-games-content">
+            <!-- Game Display Area -->
+            <div class="mb-8 rounded-xl overflow-hidden">
+                <div class="game-frame w-full rounded-lg relative">
+                    <div id="game-display" class="w-full h-full flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="loader h-12 w-12 border-4 rounded-full mx-auto mb-4"></div>
+                            <p class="text-gray-400">Select a game to begin</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Navigation -->
+            <div class="bg-gray-800 rounded-xl p-4 mb-8">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-list mr-2 text-blue-400"></i>
+                    Web Game Library
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <!-- Super Mario Kart -->
+                    <div 
+                        class="game-card bg-gray-700 rounded-lg p-4 cursor-pointer"
+                        onclick="loadGame('Super Mario Kart', 'https://supermariokart.vercel.app')"
+                        data-game="https://supermariokart.vercel.app"
+                    >
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center mr-3">
+                                <i class="fas fa-flag-checkered text-white"></i>
+                            </div>
+                            <h3 class="font-medium">Super Mario Kart</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm">Classic racing with Mario and friends</p>
+                    </div>
+
+                    <!-- Mario All Stars -->
+                    <div 
+                        class="game-card bg-gray-700 rounded-lg p-4 cursor-pointer"
+                        onclick="loadGame('Mario All Stars', 'https://marioallstars.vercel.app')"
+                        data-game="https://marioallstars.vercel.app"
+                    >
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center mr-3">
+                                <i class="fas fa-star text-white"></i>
+                            </div>
+                            <h3 class="font-medium">Mario All Stars</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm">Collection of Mario's greatest adventures</p>
+                    </div>
+
+                    <!-- Punch Out -->
+                    <div 
+                        class="game-card bg-gray-700 rounded-lg p-4 cursor-pointer"
+                        onclick="loadGame('Punch Out', 'https://tyson.jessejesse.com')"
+                        data-game="https://tyson.jessejesse.com"
+                    >
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center mr-3">
+                                <i class="fas fa-fist-raised text-white"></i>
+                            </div>
+                            <h3 class="font-medium">Punch Out</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm">Classic boxing action with Mike Tyson</p>
+                    </div>
+
+                    <!-- Need for Speed 3 -->
+                    <div 
+                        class="game-card bg-gray-700 rounded-lg p-4 cursor-pointer"
+                        onclick="loadGame('Need for Speed 3', 'https://needforspeed3.vercel.app')"
+                        data-game="https://needforspeed3.vercel.app"
+                    >
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center mr-3">
+                                <i class="fas fa-car text-white"></i>
+                            </div>
+                            <h3 class="font-medium">Need for Speed 3</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm">High-speed racing action</p>
+                    </div>
+
+                    <!-- Mario Golf -->
+                    <div 
+                        class="game-card bg-gray-700 rounded-lg p-4 cursor-pointer"
+                        onclick="loadGame('Mario Golf', 'https://mariogolf.vercel.app')"
+                        data-game="https://mariogolf.vercel.app"
+                    >
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center mr-3">
+                                <i class="fas fa-golf-ball text-white"></i>
+                            </div>
+                            <h3 class="font-medium">Mario Golf</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm">Tee off with Mario and friends</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROM Games Content -->
+        <div id="rom-games-content" class="hidden">
+            <!-- Emulator Display Area -->
+            <div class="mb-8 rounded-xl overflow-hidden">
+                <div class="game-frame w-full rounded-lg relative" id="emulator-container">
+                    <div id="emulator-loading" class="w-full h-full flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="loader h-12 w-12 border-4 rounded-full mx-auto mb-4"></div>
+                            <p class="text-gray-400">Select a ROM to begin</p>
+                        </div>
+                    </div>
+                    <iframe id="emulator" class="hidden"></iframe>
+                </div>
+            </div>
+
+            <!-- ROM Navigation -->
+            <div class="bg-gray-800 rounded-xl p-4 mb-8">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-archive mr-2 text-blue-400"></i>
+                    ROM Collection
+                </h2>
+                
+                <div class="mb-4">
+                    <label for="rom-list" class="block mb-2 text-sm font-medium">Select a ROM:</label>
+                    <div class="flex gap-2">
+                        <select id="rom-list" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                            <option value="">-- Select a ROM --</option>
+                        </select>
+                        <button id="load-rom" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">
+                            <i class="fas fa-play mr-2"></i> Play
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 gap-4" id="rom-info">
+                    <div class="bg-gray-700 rounded-lg p-4">
+                        <h3 class="font-medium mb-2 text-blue-400">About ROM Games</h3>
+                        <p class="text-gray-400 text-sm mb-3">
+                            These games are loaded from your local ROM collection. Make sure you have the proper rights to play these games.
+                        </p>
+                        <div class="flex items-center text-yellow-400 text-sm">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            <span>Some games may take a moment to load</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="bg-gray-800 rounded-xl p-4">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-gamepad mr-2 text-blue-400"></i>
+                Controls & Information
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <h3 class="font-medium mb-2 text-blue-400">Keyboard Controls</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center">
+                            <span class="bg-gray-600 px-2 py-1 rounded mr-2">WASD</span>
+                            <span>Movement</span>
+                        </li>
+                        <li class="flex items-center">
+                            <span class="bg-gray-600 px-2 py-1 rounded mr-2">Space</span>
+                            <span>Jump/Action</span>
+                        </li>
+                        <li class="flex items-center">
+                            <span class="bg-gray-600 px-2 py-1 rounded mr-2">Enter</span>
+                            <span>Select/Start</span>
+                        </li>
+                        <li class="flex items-center">
+                            <span class="bg-gray-600 px-2 py-1 rounded mr-2">F11</span>
+                            <span>Fullscreen</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <h3 class="font-medium mb-2 text-blue-400">Tips</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <i class="fas fa-info-circle text-blue-400 mt-1 mr-2"></i>
+                            <span>Click inside the game frame first for keyboard controls</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-mobile-alt text-blue-400 mt-1 mr-2"></i>
+                            <span>On mobile, touch controls will appear automatically</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-save text-blue-400 mt-1 mr-2"></i>
+                            <span>Some games support save states (look for the save icon)</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 pt-6 border-t border-gray-800 text-center text-gray-500 text-sm">
+            <p>© 2023 Ultimate Retro Game Hub. All games are property of their respective owners.</p>
+            <p class="mt-2">For entertainment purposes only. ROMs must be legally obtained.</p>
+        </footer>
     </div>
-    <div id="emulator-loading">
-        <p>Loading game...</p>
-    </div>
-</div>
 
-<script>
-    let nes = null;
-
-    document.getElementById('rom-upload').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const ext = file.name.split('.').pop().toLowerCase();
-
-        if (ext === 'nes') {
-            const buffer = await file.arrayBuffer();
-            runNES(new Uint8Array(buffer));
-        } else if (ext === 'zip') {
-            const zip = await JSZip.loadAsync(file);
-            let found = false;
-
-            for (let filename in zip.files) {
-                if (filename.endsWith('.nes')) {
-                    const nesData = await zip.files[filename].async('uint8array');
-                    runNES(nesData);
-                    found = true;
-                    break;
-                }
+    <script>
+        // Tab functionality
+        function showTab(tabId) {
+            document.getElementById('web-games-content').classList.add('hidden');
+            document.getElementById('rom-games-content').classList.add('hidden');
+            document.getElementById('web-games-tab').classList.remove('active');
+            document.getElementById('rom-games-tab').classList.remove('active');
+            
+            document.getElementById(tabId + '-content').classList.remove('hidden');
+            document.getElementById(tabId + '-tab').classList.add('active');
+            
+            // Reset the emulator display when switching tabs
+            if (tabId === 'web-games') {
+                document.getElementById('game-display').innerHTML = `
+                    <div class="text-center">
+                        <div class="loader h-12 w-12 border-4 rounded-full mx-auto mb-4"></div>
+                        <p class="text-gray-400">Select a game to begin</p>
+                    </div>
+                `;
+            } else {
+                document.getElementById('emulator').classList.add('hidden');
+                document.getElementById('emulator-loading').classList.remove('hidden');
             }
-
-            if (!found) {
-                alert("No .nes file found inside the zip.");
-            }
-        } else {
-            alert("Unsupported file type. Please upload a .nes or .zip file.");
         }
-    });
 
-    function runNES(romData) {
-        document.getElementById('emulator-container').style.display = 'block';
-        document.getElementById('emulator-loading').classList.add('hidden');
-        const canvas = document.getElementById('nes-canvas');
-        canvas.width = 256;
-        canvas.height = 240;
+        // Web games functionality
+        function loadGame(name, url) {
+            const gameDisplay = document.getElementById('game-display');
+            
+            // Show loading state
+            gameDisplay.innerHTML = `
+                <div class="text-center">
+                    <div class="loader h-12 w-12 border-4 rounded-full mx-auto mb-4"></div>
+                    <p class="text-gray-400">Loading ${name}...</p>
+                </div>
+            `;
+            
+            // Update active game card
+            document.querySelectorAll('.game-card').forEach(card => {
+                card.classList.remove('active-game');
+            });
+            event.currentTarget.classList.add('active-game');
+            
+            // Create iframe after a small delay to show loading state
+            setTimeout(() => {
+                gameDisplay.innerHTML = `
+                    <iframe 
+                        src="${url}" 
+                        class="w-full h-full border-0" 
+                        allowfullscreen
+                        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                    ></iframe>
+                `;
+            }, 500);
+        }
 
-        nes = new jsnes.NES({
-            onFrame: function(frameBuffer) {
-                const ctx = canvas.getContext('2d');
-                const imageData = ctx.getImageData(0, 0, 256, 240);
-                for (let i = 0; i < frameBuffer.length; i++) {
-                    imageData.data[i * 4 + 0] = (frameBuffer[i] >> 16) & 0xFF;
-                    imageData.data[i * 4 + 1] = (frameBuffer[i] >> 8) & 0xFF;
-                    imageData.data[i * 4 + 2] = frameBuffer[i] & 0xFF;
-                    imageData.data[i * 4 + 3] = 0xFF;
-                }
-                ctx.putImageData(imageData, 0, 0);
-            },
-            onStatusUpdate: console.log,
-            onAudioSample: () => {}
+        // ROM games functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize EmulatorJS variables
+            window.EJS_player = "#emulator";
+            window.EJS_core = "nes";
+            window.EJS_gameName = "";
+            window.EJS_color = "#263e0f";
+            window.EJS_startOnLoaded = true;
+            window.EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
+            window.EJS_gameUrl = "";
+            
+            // Load the ROM list
+            fetchRomList();
+            
+            // Set up the ROM loader button
+            document.getElementById('load-rom').addEventListener('click', loadRom);
         });
 
-        nes.loadROM(Base64.fromUint8Array(romData));
-        nes.start();
-    }
-</script>
+        async function fetchRomList() {
+            try {
+                // This assumes your ROMs are in a /roms/ folder
+                const response = await fetch('/roms/');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch ROM list');
+                }
+                
+                const data = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, "text/html");
+                const files = [...doc.querySelectorAll("a")];
+                
+                const romList = document.getElementById('rom-list');
+                
+                files.forEach((file) => {
+                    const fileName = file.getAttribute('href');
+                    
+                    // Only show .nes and .zip files
+                    if (fileName.endsWith('.nes') || fileName.endsWith('.zip')) {
+                        const option = document.createElement('option');
+                        option.value = `/roms/${fileName}`;
+                        option.textContent = decodeURIComponent(fileName.replace('.nes', '').replace('.zip', ''));
+                        romList.appendChild(option);
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching ROM list:', error);
+                document.getElementById('rom-list').innerHTML = `
+                    <option value="">Error loading ROMs: ${error.message}</option>
+                `;
+            }
+        }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+        async function loadRom() {
+            const romList = document.getElementById('rom-list');
+            const selectedRom = romList.value;
+            
+            if (!selectedRom || selectedRom === "-- Select a ROM --") {
+                alert("Please select a ROM file first!");
+                return;
+            }
+            
+            document.getElementById('emulator-loading').innerHTML = `
+                <div class="text-center">
+                    <div class="loader h-12 w-12 border-4 rounded-full mx-auto mb-4"></div>
+                    <p class="text-gray-400">Loading ROM...</p>
+                </div>
+            `;
+            document.getElementById('emulator-loading').classList.remove('hidden');
+            document.getElementById('emulator').classList.add('hidden');
+            
+            try {
+                if (selectedRom.endsWith('.zip')) {
+                    // Handle ZIP files
+                    const response = await fetch(selectedRom);
+                    const blob = await response.blob();
+                    const zip = await JSZip.loadAsync(blob);
+                    
+                    let nesFile = null;
+                    zip.forEach((relativePath, file) => {
+                        if (relativePath.endsWith('.nes')) {
+                            nesFile = file;
+                        }
+                    });
+                    
+                    if (nesFile) {
+                        const nesData = await nesFile.async('blob');
+                        const nesUrl = URL.createObjectURL(nesData);
+                        
+                        window.EJS_gameUrl = nesUrl;
+                        reloadEmulator();
+                    } else {
+                        throw new Error('No .nes file found in the ZIP archive');
+                    }
+                } else {
+                    // Direct .nes file
+                    window.EJS_gameUrl = selectedRom;
+                    reloadEmulator();
+                }
+            } catch (error) {
+                console.error('Error loading ROM:', error);
+                document.getElementById('emulator-loading').innerHTML = `
+                    <div class="text-center text-red-400">
+                        <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
+                        <p>Error loading ROM: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
 
+        function reloadEmulator() {
+            // Remove existing emulator script if it exists
+            const oldScript = document.querySelector('script[src="https://cdn.emulatorjs.org/stable/data/loader.js"]');
+            if (oldScript) {
+                oldScript.remove();
+            }
+            
+            // Create new script
+            const script = document.createElement('script');
+            script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+            script.onload = function() {
+                document.getElementById('emulator-loading').classList.add('hidden');
+                document.getElementById('emulator').classList.remove('hidden');
+            };
+            document.body.appendChild(script);
+        }
+    </script>
 </body>
 </html>
