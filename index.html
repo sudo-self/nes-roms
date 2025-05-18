@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NES Emulator</title>
+    <script src="https://unpkg.com/jsnes@0.8.0/dist/jsnes.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-base64/3.7.5/base64.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f3f3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #rom-games-content {
+            text-align: center;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #emulator-container {
+            display: none;
+            margin-top: 20px;
+        }
+        #emulator-loading {
+            margin-top: 20px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div id="rom-games-content">
+    <h1>NES Emulator</h1>
+    <p>Upload a .nes or .zip file containing a .nes ROM:</p>
+    <input type="file" id="rom-upload" accept=".zip,.nes" class="text-black bg-white p-2 rounded" />
+    <div id="emulator-container">
+        <canvas id="nes-canvas"></canvas>
+    </div>
+    <div id="emulator-loading">
+        <p>Loading game...</p>
+    </div>
+</div>
+
+<script>
+    let nes = null;
+
+    document.getElementById('rom-upload').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const ext = file.name.split('.').pop().toLowerCase();
+
+        if (ext === 'nes') {
+            const buffer = await file.arrayBuffer();
+            runNES(new Uint8Array(buffer));
+        } else if (ext === 'zip') {
+            const zip = await JSZip.loadAsync(file);
+            let found = false;
+
+            for (let filename in zip.files) {
+                if (filename.endsWith('.nes')) {
+                    const nesData = await zip.files[filename].async('uint8array');
+                    runNES(nesData);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                alert("No .nes file found inside the zip.");
+            }
+        } else {
+            alert("Unsupported file type. Please upload a .nes or .zip file.");
+        }
+    });
+
+    function runNES(romData) {
+        document.getElementById('emulator-container').style.display = 'block';
+        document.getElementById('emulator-loading').classList.add('hidden');
+        const canvas = document.getElementById('nes-canvas');
+        canvas.width = 256;
+        canvas.height = 240;
+
+        nes = new jsnes.NES({
+            onFrame: function(frameBuffer) {
+                const ctx = canvas.getContext('2d');
+                const imageData = ctx.getImageData(0, 0, 256, 240);
+                for (let i = 0; i < frameBuffer.length; i++) {
+                    imageData.data[i * 4 + 0] = (frameBuffer[i] >> 16) & 0xFF;
+                    imageData.data[i * 4 + 1] = (frameBuffer[i] >> 8) & 0xFF;
+                    imageData.data[i * 4 + 2] = frameBuffer[i] & 0xFF;
+                    imageData.data[i * 4 + 3] = 0xFF;
+                }
+                ctx.putImageData(imageData, 0, 0);
+            },
+            onStatusUpdate: console.log,
+            onAudioSample: () => {}
+        });
+
+        nes.loadROM(Base64.fromUint8Array(romData));
+        nes.start();
+    }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
+</body>
+</html>
